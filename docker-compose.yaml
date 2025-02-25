@@ -1,0 +1,7 @@
+services:
+  runner:
+    image: wpkpda/github-actions-runner:v1.0.0
+    environment:
+      - URL=
+      - TOKEN=
+    restart: unless-stopped
