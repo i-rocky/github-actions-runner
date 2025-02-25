@@ -1,6 +1,7 @@
 services:
   runner:
     image: wpkpda/github-actions-runner:v1.0.0
+    pull_policy: always
     environment:
       - URL=
       - TOKEN=
