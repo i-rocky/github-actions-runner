@@ -73,10 +73,11 @@ RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2
     ./aws/install && \
     rm -rf awscliv2.zip aws
 
-ENV PATH="/root/.pyenv/bin:/usr/local/go/bin:$PATH"
 ENV GOPATH="/root/go"
 ENV GOROOT="/usr/local/go"
 ENV NVM_DIR="/root/.nvm"
+
+ENV PATH="/root/.cargo/bin:/root/.local/bin:/root/.pyenv/bin:/usr/local/go/bin:$PATH"
 
 RUN chown -R docker ~docker
 

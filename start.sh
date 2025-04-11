@@ -14,6 +14,8 @@ fi
 
 export RUNNER_ALLOW_RUNASROOT=1
 
+. /root/.bashrc
+
 ./config.sh --url "$URL" --token "$TOKEN"
 
 cleanup() {
