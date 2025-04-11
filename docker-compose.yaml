@@ -6,3 +6,8 @@ services:
       - URL=
       - TOKEN=
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
