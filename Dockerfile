@@ -34,7 +34,6 @@ RUN apt update && \
     tk-dev \
     libffi-dev \
     liblzma-dev \
-    python-openssl \
     git \
     zip \
     tar \
@@ -43,13 +42,14 @@ RUN apt update && \
     nano \
     ca-certificates
 
-RUN if [ "$DOCKER_DEFAULT_PLATFORM" == "linux/amd64" ]; then \
-        RUNNER_ARCH=x64; \
-    else if [ "$DOCKER_DEFAULT_PLATFORM" == "linux/arm64" ]; then \
-        RUNNER_ARCH=arm64; \
-    fi &&  \
+RUN RUNNER_ARCH=$(case $(uname -m) in \
+        x86_64) echo "x64" ;; \
+        aarch64|arm64) echo "arm64" ;; \
+        *) echo "unsupported" ;; \
+    esac) && \
     cd /home/docker && \
     mkdir -p actions-runner && cd actions-runner && \
+    echo https://github.com/actions/runner/releases/download/v${RUNNER_VERSION}/actions-runner-linux-${RUNNER_ARCH}-${RUNNER_VERSION}.tar.gz && \
     curl -O -L https://github.com/actions/runner/releases/download/v${RUNNER_VERSION}/actions-runner-linux-${RUNNER_ARCH}-${RUNNER_VERSION}.tar.gz && \
     tar xzf ./actions-runner-linux-${RUNNER_ARCH}-${RUNNER_VERSION}.tar.gz && \
     rm ./actions-runner-linux-${RUNNER_ARCH}-${RUNNER_VERSION}.tar.gz
@@ -59,9 +59,14 @@ RUN curl -fsSL https://get.docker.com | sh
 RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 RUN curl -fsSL https://pyenv.run | bash
-RUN wget https://go.dev/dl/go${GO_VERSION}.linux-${RUNNER_ARCH}.tar.gz && \
+RUN RUNNER_ARCH=$(case $(uname -m) in \
+        x86_64) echo "amd64" ;; \
+        aarch64|arm64) echo "arm64" ;; \
+        *) echo "unsupported" ;; \
+    esac) && \
+    wget https://go.dev/dl/go${GO_VERSION}.linux-${RUNNER_ARCH}.tar.gz && \
     tar -C /usr/local -xzf go${GO_VERSION}.linux-${RUNNER_ARCH}.tar.gz && \
-    rm go${GO_VERSION}.linux-${RUNNER_ARCH}.tar.gz \
+    rm go${GO_VERSION}.linux-${RUNNER_ARCH}.tar.gz
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 
 ENV PATH="/root/.pyenv/bin:/usr/local/go/bin:$PATH"
