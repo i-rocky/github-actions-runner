@@ -68,6 +68,10 @@ RUN RUNNER_ARCH=$(case $(uname -m) in \
     tar -C /usr/local -xzf go${GO_VERSION}.linux-${RUNNER_ARCH}.tar.gz && \
     rm go${GO_VERSION}.linux-${RUNNER_ARCH}.tar.gz
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && \
+    unzip awscliv2.zip && \
+    ./aws/install && \
+    rm -rf awscliv2.zip aws
 
 ENV PATH="/root/.pyenv/bin:/usr/local/go/bin:$PATH"
 ENV GOPATH="/root/go"
