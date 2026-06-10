@@ -1,7 +1,10 @@
+VERSION = v1.2.0
+IMAGE = wpkpda/github-actions-runner
+
 build:
-	docker build -t wpkpda/github-actions-runner:v1.0.0 .
+	docker buildx build --builder default -t $(IMAGE):$(VERSION) .
 
 push:
-	docker buildx build --push --platform linux/amd64 -t wpkpda/github-actions-runner:v1.0.0 -t wpkpda/github-actions-runner:latest .
+	docker buildx build --builder default --push --platform linux/amd64 -t $(IMAGE):$(VERSION) -t $(IMAGE):latest .
 
 .PHONY: build push

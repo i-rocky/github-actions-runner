@@ -1,7 +1,8 @@
 FROM ubuntu:24.04
 
-ARG RUNNER_VERSION=2.323.0
-ARG GO_VERSION=1.24.2
+ARG RUNNER_VERSION=2.335.1
+ARG GO_VERSION=1.26.4
+ARG NVM_VERSION=0.40.5
 ARG DEBIAN_FRONTEND=noninteractive
 
 RUN apt update && \
@@ -56,7 +57,7 @@ RUN RUNNER_ARCH=$(case $(uname -m) in \
 
 
 RUN curl -fsSL https://get.docker.com | sh
-RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
+RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v${NVM_VERSION}/install.sh | bash
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 RUN curl -fsSL https://pyenv.run | bash
 RUN RUNNER_ARCH=$(case $(uname -m) in \

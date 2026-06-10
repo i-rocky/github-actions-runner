@@ -20,7 +20,7 @@ export RUNNER_ALLOW_RUNASROOT=1
 
 cleanup() {
   echo "Cleaning up..."
-    ./config.sh remove --unattended --token "$TOKEN"
+    ./config.sh remove --token "$TOKEN"
 }
 
 trap 'cleanup; exit 130' INT
