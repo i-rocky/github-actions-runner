@@ -1,0 +1,91 @@
+name: auto-update
+
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+    inputs:
+      force:
+        description: Rebuild and push even without dependency updates
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+env:
+  IMAGE: wpkpda/github-actions-runner
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Update pinned versions in Dockerfile
+        id: deps
+        run: |
+          set -euo pipefail
+          runner=$(curl -fsSL https://api.github.com/repos/actions/runner/releases/latest | jq -r '.tag_name' | sed 's/^v//')
+          go=$(curl -fsSL 'https://go.dev/dl/?mode=json' | jq -r '[.[] | select(.stable)][0].version' | sed 's/^go//')
+          nvm=$(curl -fsSL https://api.github.com/repos/nvm-sh/nvm/releases/latest | jq -r '.tag_name' | sed 's/^v//')
+          for v in "$runner" "$go" "$nvm"; do
+            echo "$v" | grep -qE '^[0-9]+\.[0-9]+(\.[0-9]+)?$' || { echo "bad version: $v"; exit 1; }
+          done
+          sed -i -E \
+            -e "s/^ARG RUNNER_VERSION=.*/ARG RUNNER_VERSION=$runner/" \
+            -e "s/^ARG GO_VERSION=.*/ARG GO_VERSION=$go/" \
+            -e "s/^ARG NVM_VERSION=.*/ARG NVM_VERSION=$nvm/" \
+            Dockerfile
+          if git diff --quiet -- Dockerfile; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            git diff -- Dockerfile
+          fi
+
+      - name: Decide whether to build
+        id: plan
+        run: |
+          if [ "${{ steps.deps.outputs.changed }}" = "true" ] || [ "${{ inputs.force }}" = "true" ]; then
+            echo "build=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "build=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Bump version and commit
+        if: steps.deps.outputs.changed == 'true'
+        run: |
+          set -euo pipefail
+          current=$(grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' Makefile | head -1)
+          new=$(echo "$current" | awk -F. '{printf "%s.%s.%d", $1, $2, $3 + 1}')
+          sed -i "s/^VERSION = .*/VERSION = $new/" Makefile
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Dockerfile Makefile
+          git commit -m "chore: update dependencies, release $new"
+          git push
+
+      - name: Read version
+        if: steps.plan.outputs.build == 'true'
+        id: ver
+        run: echo "version=$(grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' Makefile | head -1)" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+        if: steps.plan.outputs.build == 'true'
+
+      - uses: docker/login-action@v3
+        if: steps.plan.outputs.build == 'true'
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        if: steps.plan.outputs.build == 'true'
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:${{ steps.ver.outputs.version }}
+            ${{ env.IMAGE }}:latest
