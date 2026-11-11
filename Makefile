@@ -1,4 +1,4 @@
-VERSION = v1.2.16
+VERSION = v1.2.17
 IMAGE = wpkpda/github-actions-runner
 
 build:
